@@ -1,104 +1,109 @@
-import React, { useState } from "react";
+import React from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import "../css/add-teacher.css";
 
-function AddTeacher() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "enseignant"
-  });
+class AddTeacher extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      teachers: [],
+      subjects: [],
+      classes: [],
+      teacher_id: "",
+      subject_id: "",
+      class_id: "",
+      message: "",
+    };
 
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const navigate = useNavigate();
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-
-    setForm(function (prev) {
-      return {
-        ...prev,
-        [name]: value
-      };
-    });
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.handleChange = this.handleChange.bind(this);
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
-
-    const token = localStorage.getItem("token");
-
-    axios.post("http://localhost:8000/api/users", form, {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-    .then(function () {
-      setSuccess("Enseignant ajouté avec succès !");
-      setForm({
-        name: "",
-        email: "",
-        password: "",
-        role: "enseignant"
+  componentDidMount() {
+    // Load teachers, subjects, and classes from API
+    axios.get("/api/users?role=enseignant") // assuming your endpoint filters by role
+      .then(response => {
+        this.setState({ teachers: response.data });
       });
 
-      setTimeout(function () {
-        navigate("/admin");
-      }, 2000);
+    axios.get("/api/subjects")
+      .then(response => {
+        this.setState({ subjects: response.data });
+      });
+
+    axios.get("/api/classes")
+      .then(response => {
+        this.setState({ classes: response.data });
+      });
+  }
+
+  handleChange(event) {
+    var name = event.target.name;
+    var value = event.target.value;
+    this.setState({ [name]: value });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+
+    axios.post("/api/assignments", {
+      teacher_id: this.state.teacher_id,
+      subject_id: this.state.subject_id,
+      class_id: this.state.class_id,
     })
-    .catch(function (error) {
-      setError("Erreur lors de l'ajout de l'enseignant.");
+    .then(response => {
+      this.setState({ message: "✅ Assignation réussie !" });
+    })
+    .catch(error => {
+      if (error.response && error.response.status === 422) {
+        this.setState({ message: error.response.data.message });
+      } else {
+        this.setState({ message: "❌ Une erreur s'est produite." });
+      }
     });
   }
 
-  return (
-    <div className="add-teacher-form">
-      <h2>Ajouter un enseignant</h2>
+  render() {
+    return (
+      <div>
+        <h2>Assigner un enseignant</h2>
+        <form onSubmit={this.handleSubmit}>
+          <div>
+            <label>Enseignant:</label>
+            <select name="teacher_id" value={this.state.teacher_id} onChange={this.handleChange}>
+              <option value="">-- Choisir --</option>
+              {this.state.teachers.map(function(teacher) {
+                return <option key={teacher.id} value={teacher.id}>{teacher.name}</option>;
+              })}
+            </select>
+          </div>
 
-      {error && <p className="error">{error}</p>}
-      {success && <p className="success">{success}</p>}
+          <div>
+            <label>Matière:</label>
+            <select name="subject_id" value={this.state.subject_id} onChange={this.handleChange}>
+              <option value="">-- Choisir --</option>
+              {this.state.subjects.map(function(subject) {
+                return <option key={subject.id} value={subject.id}>{subject.name}</option>;
+              })}
+            </select>
+          </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Nom</label>
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
-        </div>
+          <div>
+            <label>Classe:</label>
+            <select name="class_id" value={this.state.class_id} onChange={this.handleChange}>
+              <option value="">-- Choisir --</option>
+              {this.state.classes.map(function(classItem) {
+                return <option key={classItem.id} value={classItem.id}>{classItem.name}</option>;
+              })}
+            </select>
+          </div>
 
-        <div className="form-group">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
+          <button type="submit">Assigner</button>
+        </form>
 
-        <div className="form-group">
-          <label>Mot de passe</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <button type="submit">Ajouter</button>
-      </form>
-    </div>
-  );
+        {this.state.message && <p>{this.state.message}</p>}
+      </div>
+    );
+  }
 }
 
 export default AddTeacher;

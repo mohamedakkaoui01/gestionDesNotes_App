@@ -179,3 +179,26 @@
   margin-right: 0.5rem;
 }
 
+.assign-teacher-btn {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.assign-form {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.assign-form select,
+.assign-form button {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+}
